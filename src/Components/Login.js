@@ -1,49 +1,57 @@
 import React, { Component } from "react";
-import axios from "axios";
+import User from "../auth/users";
 
 export default class Login extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
+    state = {
       username: "",
       password: "",
       loginErrors: ""
     };
-
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleChange = this.handleChange.bind(this);
-  }
 
   handleChange(event) {
     this.setState({
       [event.target.name]: event.target.value
     });
   }
+  resetFields(){
+    this.setState({
+      username: "",
+      password: ""
+    })
+  }
 
-  handleSubmit(event) {
-    const { username, password } = this.state;
-    console.log(event, this.state);
-    axios
-      .post(
-        "http://localhost:3000/sessions",
-        {
-          user: {
-            username: username,
-            password: password
-          }
+  async handleSubmit(){
+    if(!this.state.username){
+      return;
+    }
+    if(!this.state.password){
+      return;
+    }
+
+    try{
+      let res = await fetch("/login",{
+        method: "post",
+        headers:{
+          "Accept" : "application/json",
+          "Content-type":"application/json" 
         },
-        { withCredentials: true }
-      )
-      .then((response) => {
-        if (response.data.logged_in) {
-          this.props.handleSuccessfulAuth(response.data);
-        }
-      })
-      .catch((error) => {
-        console.log("login error", error);
+        body: JSON.stringify({
+          username: this.state.username,
+          password: this.state.password
+        })
       });
-    event.preventDefault();
+      let result = await res.json();
+      if(result && result.success){
+        User.isLoggedIn=true;
+        User.username=result.username;
+      }else if((result && result.success===false)){
+        this.resetFields();
+        alert(result.msg);
+      }
+    }catch(e){
+      this.resetFields();
+      console.log(e);
+    }
   }
 
   render() {
