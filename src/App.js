@@ -1,87 +1,88 @@
 import React, { Component } from "react";
-import { BrowserRouter, Switch, Route } from "react-router-dom";
-import axios from "axios";
+import {observer} from "mobx-react";
+import User from "./auth/users";
+import Login from "./Components/Login";
 
-import Home from "./Components/Home";
 
-export default class App extends Component {
-  constructor() {
-    super();
+class App extends Component {
 
-    this.state = {
-      loggedInStatus: "NOT_LOGGED_IN",
-      user: {}
-    };
-
-    this.handleLogin = this.handleLogin.bind(this);
-    this.handleLogout = this.handleLogout.bind(this);
-  }
-
-  checkLoginStatus() {
-    axios
-      .get("http://localhost:3001/logged_in", { withCredentials: true })
-      .then((response) => {
-        if (
-          response.data.logged_in &&
-          this.state.loggedInStatus === "NOT_LOGGED_IN"
-        ) {
-          this.setState({
-            loggedInStatus: "LOGGED_IN",
-            user: response.data.user
-          });
-        } else if (
-          !response.data.logged_in &
-          (this.state.loggedInStatus === "LOGGED_IN")
-        ) {
-          this.setState({
-            loggedInStatus: "NOT_LOGGED_IN",
-            user: {}
-          });
+  async componentDidMount() {
+    try{
+      let res =  await fetch('/isLoggedIn',{
+        method: 'post',
+        headers:{
+          'Accept': 'application/json',
+          'Content-type': 'application/json'
         }
-      })
-      .catch((error) => {
-        console.log("check login error", error);
       });
+      let result = await res.json();
+
+      if(result && result.success){
+        User.loading = false;
+        User.isLoggedIn=true;
+        User.username=result.username;
+      }else{
+        User.loading = false;
+        User.isLoggedIn=false;
+      }
+    }catch(e){
+      User.loading = false;
+      User.isLoggedIn=false;
+      console.log("Error: ",e);
+    }
   }
 
-  componentDidMount() {
-    this.checkLoginStatus();
-  }
+  async logout() {
+    try{
+      let res =  await fetch('/logout',{
+        method: 'post',
+        headers:{
+          'Accept': 'application/json',
+          'Content-type': 'application/json'
+        }
+      });
+      let result = await res.json();
 
-  handleLogout() {
-    this.setState({
-      loggedInStatus: "NOT_LOGGED_IN",
-      user: {}
-    });
-  }
-
-  handleLogin(data) {
-    this.setState({
-      loggedInStatus: "LOGGED_IN",
-      user: data.user
-    });
+      if(result && result.success){
+        // User.loading = false;
+        User.isLoggedIn=false;
+        User.username='';
+      }
+    }catch(e){
+      console.log("Error: ",e);
+    }
   }
 
   render() {
-    return (
-      <div className="app">
-        <BrowserRouter>
-          <Switch>
-            <Route
-              exact
-              path={"/"}
-              render={(props) => (
-                <Home
-                  {...props}
-                  handleLogin={this.handleLogin}
-                  handleLogout={this.handleLogout}
-                  loggedInStatus={this.state.loggedInStatus}
-                />
-              )}
-            />
-          </Switch>
-        </BrowserRouter>
-      </div>
-    );
+    if(User.loading){
+      return(
+        <div className="app">
+          <div className="container">
+            Loading...
+          </div>
+        </div>
+      )
+    }else{
+      if(User.isLoggedIn){
+        return(
+          <div className="app">
+            <div className="container">
+              Welcome {User.username}!
+              sasdasd
+              <button type="submit" onClick={() =>this.logout()}>Log Out</button>
+            </div>
+          </div>
+        )
+      }else{
+        return (
+          <div className="app">
+            <div className="container">
+              <Login/>
+            </div>
+          </div>
+        );
+      }
+    }
   }
 }
+export default observer(App);
