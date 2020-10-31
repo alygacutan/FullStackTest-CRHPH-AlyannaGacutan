@@ -1,14 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
-import Home from "./Components/Home";
-import "antd/dist/antd.less";
-import "antd/dist/antd.css";
+import App from "./App";
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(
   <React.StrictMode>
-    <Home />
+    <App />
   </React.StrictMode>,
   rootElement
 );
